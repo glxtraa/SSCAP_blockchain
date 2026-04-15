@@ -1,0 +1,29 @@
+# Credentials
+.env
+.env.local
+
+# Dependency directories
+node_modules/
+package-lock.json
+
+# Hardhat build artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Next.js build output
+.next/
+out/
+
+# Local Test Data & Mock Scripts
+example_data.json
+scripts/mock_sscap_api.js
+scripts/verify_reconstruction.py
+
+# Planning & Scratch
+vwb_blockchain_repo_plan/
+tmp/
+*.log
+
+# OS files
+.DS_Store
