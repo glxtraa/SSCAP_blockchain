@@ -2,13 +2,17 @@ const { downloadData } = require('./data-downloader');
 const { uploadToArweave } = require('./arweave-uploader');
 const { anchorToEAS } = require('./eas-anchorer');
 const { getAnchoredDates } = require('./eas-query');
+const { checkGas } = require('./gas-monitor');
 require('dotenv').config();
 
 async function runBackfill() {
   console.log('--- Starting Historical Backfill ---');
   
   try {
-    // 1. Download ALL data (we'll ignore the 24h filter in downloader for this script)
+    // 0. Check Gas
+    await checkGas();
+
+    // 1. Download ALL data...
     // Actually, I'll just use a local filter here.
     const axios = require('axios');
     const apiUrl = process.env.SSCAP_API_URL || 'http://localhost:3001';

@@ -2,12 +2,16 @@ const { downloadData } = require('./data-downloader');
 const { uploadToArweave } = require('./arweave-uploader');
 const { anchorToEAS } = require('./eas-anchorer');
 const { getAnchoredDates } = require('./eas-query');
+const { checkGas } = require('./gas-monitor');
 require('dotenv').config();
 
 async function runTier1() {
   console.log('--- Starting Tier 1 Daily Anchoring ---');
   
   try {
+    // 0. Check Gas
+    await checkGas();
+
     const records = await downloadData();
     if (records.length === 0) {
       console.log('No new records to anchor today.');
