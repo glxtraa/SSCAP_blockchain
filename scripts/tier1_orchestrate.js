@@ -18,21 +18,42 @@ async function runTier1() {
       return;
     }
 
-    const arweaveUrl = await uploadToArweave(records);
     const date = new Date().toISOString().split('T')[0];
+    
+    // Group records by tlaloque_id
+    const groups = {};
+    records.forEach(record => {
+      const tid = record.content.data.tlaloque_id || 'unknown';
+      if (!groups[tid]) groups[tid] = [];
+      groups[tid].push(record);
+    });
 
-    // Deduplication check (Warning only for today)
+    const tids = Object.keys(groups);
+    console.log(`Grouping complete. Found ${tids.length} active sensors today.`);
+
+    const results = [];
     const anchoredDates = await getAnchoredDates();
-    if (anchoredDates.has(date)) {
-      console.log(`[Note] Today (${date}) was already anchored. Proceeding with update to capture new measurements.`);
+
+    for (const tid of tids) {
+      console.log(`\nProcessing Sensor: ${tid} (${groups[tid].length} records)`);
+      
+      const arweaveUrl = await uploadToArweave(groups[tid]);
+      
+      if (anchoredDates.has(date)) {
+        console.log(`[Note] ${date} already has anchors. Adding new attestation for sensor ${tid}.`);
+      }
+
+      const attestationUID = await anchorToEAS(date, arweaveUrl, groups[tid].length);
+      results.push({ tid, attestationUID, arweaveUrl });
+      
+      // Small pause to prevent nonce collisions
+      await new Promise(r => setTimeout(r, 2000));
     }
 
-    const attestationUID = await anchorToEAS(date, arweaveUrl, records.length);
-
-    console.log('--- Tier 1 Completed Successfully ---');
-    console.log(`Summary: Date=${date}, Records=${records.length}, Attestation=${attestationUID}`);
+    console.log('\n--- Tier 1 Completed Successfully ---');
+    console.log(`Processed ${results.length} sensors.`);
     
-    return { date, attestationUID, arweaveUrl };
+    return results;
   } catch (error) {
     console.error('Tier 1 Failed:', error.message);
     process.exit(1);

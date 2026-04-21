@@ -21,12 +21,15 @@ async function runBackfill() {
 
     console.log(`Processing ${allRecords.length} total historical records.`);
 
-    // 2. Group by day
+    // 2. Group by day AND tlaloque_id
     const groups = {};
     allRecords.forEach(record => {
       const date = (record.content.created_at || record.uploadedAt).split('T')[0];
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(record);
+      const tid = record.content.data.tlaloque_id || 'unknown';
+      
+      if (!groups[date]) groups[date] = {};
+      if (!groups[date][tid]) groups[date][tid] = [];
+      groups[date][tid].push(record);
     });
 
     const dates = Object.keys(groups).sort();
@@ -37,20 +40,29 @@ async function runBackfill() {
 
     // 3. Process each day
     for (const date of dates) {
+      const sensorGroups = groups[date];
+      const tids = Object.keys(sensorGroups);
+
       // Deduplication Logic: Skip if historical (date < today) AND already anchored
+      // Note: If you want to force re-anchoring historical data per sensor, comment out this block.
       if (date < today && anchoredDates.has(date)) {
-        console.log(`\n--- Skipping Day: ${date} (Already Anchored) ---`);
+        console.log(`\n--- Skipping Day: ${date} (Already has an anchor) ---`);
         continue;
       }
 
-      console.log(`\n--- Anchoring Day: ${date} (${groups[date].length} records) ---`);
+      console.log(`\n--- Processing Day: ${date} (${tids.length} sensors) ---`);
       
-      const arweaveUrl = await uploadToArweave(groups[date]);
-      const attestationUID = await anchorToEAS(date, arweaveUrl, groups[date].length);
-      
-      console.log(`Done for ${date}: UID=${attestationUID}`);
-      // Wait to prevent nonce conflicts
-      await new Promise(r => setTimeout(r, 5000));
+      for (const tid of tids) {
+        const sensorRecords = sensorGroups[tid];
+        console.log(`  Anchoring Sensor: ${tid} (${sensorRecords.length} records)`);
+        
+        const arweaveUrl = await uploadToArweave(sensorRecords);
+        const attestationUID = await anchorToEAS(date, arweaveUrl, sensorRecords.length);
+        
+        console.log(`  Done for ${tid}: UID=${attestationUID}`);
+        // Wait to prevent nonce conflicts
+        await new Promise(r => setTimeout(r, 3000));
+      }
     }
 
     console.log('\n--- Backfill Completed Successfully ---');
