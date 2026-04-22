@@ -1,5 +1,6 @@
 const axios = require('axios');
 require('dotenv').config();
+process.env.TZ = 'UTC';
 
 async function downloadData() {
   const apiUrl = process.env.SSCAP_API_URL || 'http://localhost:3001';

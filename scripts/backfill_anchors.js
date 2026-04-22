@@ -4,6 +4,7 @@ const { anchorToEAS } = require('./eas-anchorer');
 const { getAnchoredDates } = require('./eas-query');
 const { checkGas } = require('./gas-monitor');
 require('dotenv').config();
+process.env.TZ = 'UTC';
 
 async function runBackfill() {
   console.log('--- Starting Historical Backfill ---');
@@ -43,10 +44,23 @@ async function runBackfill() {
       const sensorGroups = groups[date];
       const tids = Object.keys(sensorGroups);
 
-      // Deduplication Logic: Skip if historical (date < today) AND already anchored
-      // Note: If you want to force re-anchoring historical data per sensor, comment out this block.
-      if (date < today && anchoredDates.has(date)) {
-        console.log(`\n--- Skipping Day: ${date} (Already has an anchor) ---`);
+      // Deduplication & Safety Logic:
+      // 1. Skip if it's the current day (it's not finished yet)
+      if (date === today) {
+        console.log(`\n--- Skipping Today: ${date} (Waiting for day to finalize) ---`);
+        continue;
+      }
+
+      const anchorCount = anchoredDates[date] || 0;
+      const yesterday = new Date(new Date(today).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      if (date < today && anchorCount > 1) {
+        console.log(`\n--- Skipping Day: ${date} (Already anchored per-sensor: ${anchorCount} anchors) ---`);
+        continue;
+      }
+
+      if (date < yesterday && anchorCount === 1) {
+        console.log(`\n--- Skipping Day: ${date} (Already has aggregate anchor) ---`);
         continue;
       }
 

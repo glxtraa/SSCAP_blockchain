@@ -10,7 +10,7 @@ async function uploadToArweave(data) {
   }
 
   const irys = new Irys({
-    url: 'https://node1.irys.xyz',
+    url: 'https://node2.irys.xyz',
     token: 'base-eth',
     key: privateKey,
     config: { providerUrl: rpcUrl }

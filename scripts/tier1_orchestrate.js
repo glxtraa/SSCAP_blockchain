@@ -4,6 +4,7 @@ const { anchorToEAS } = require('./eas-anchorer');
 const { getAnchoredDates } = require('./eas-query');
 const { checkGas } = require('./gas-monitor');
 require('dotenv').config();
+process.env.TZ = 'UTC';
 
 async function runTier1() {
   console.log('--- Starting Tier 1 Daily Anchoring ---');
@@ -39,8 +40,8 @@ async function runTier1() {
       
       const arweaveUrl = await uploadToArweave(groups[tid]);
       
-      if (anchoredDates.has(date)) {
-        console.log(`[Note] ${date} already has anchors. Adding new attestation for sensor ${tid}.`);
+      if (anchoredDates[date]) {
+        console.log(`[Note] ${date} already has ${anchoredDates[date]} anchor(s). Adding new attestation for sensor ${tid}.`);
       }
 
       const attestationUID = await anchorToEAS(date, arweaveUrl, groups[tid].length);

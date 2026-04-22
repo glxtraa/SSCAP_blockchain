@@ -34,22 +34,23 @@ async function getAnchoredDates() {
     });
 
     const attestations = response.data.data.attestations || [];
-    const dates = new Set();
+    const dateCounts = {}; // Date String -> Count
 
     attestations.forEach(att => {
       try {
         const decoded = JSON.parse(att.decodedDataJson);
         const dateItem = decoded.find(item => item.name === 'date');
         if (dateItem && dateItem.value && dateItem.value.value) {
-          dates.add(dateItem.value.value);
+          const date = dateItem.value.value;
+          dateCounts[date] = (dateCounts[date] || 0) + 1;
         }
       } catch (e) {
         // Skip malformed attestations
       }
     });
 
-    console.log(`Fetched ${dates.size} unique anchored dates from EAS.`);
-    return dates;
+    console.log(`Fetched ${Object.keys(dateCounts).length} unique anchored dates from EAS.`);
+    return dateCounts;
   } catch (error) {
     console.error('Error fetching anchored dates from EAS:', error.message);
     return new Set(); // Fallback to empty set to allow progress, but warning is logged

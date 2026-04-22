@@ -34,6 +34,7 @@ async function checkGas() {
 
     if (balanceEth < WARNING_THRESHOLD) {
       console.warn(`\n[WARNING] Wallet balance is low (${balanceEth.toFixed(6)} ETH).`);
+      console.warn(`Please fund the attester wallet soon: ${address}`);
       console.warn(`Consider adding more funds soon to prevent future interruptions.\n`);
     }
 
