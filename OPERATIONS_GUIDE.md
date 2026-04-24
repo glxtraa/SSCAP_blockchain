@@ -33,7 +33,26 @@ node scripts/fund-irys.js 0.0005
 
 ---
 
-## 3. Operational Policies
+## 3. Historical Backfill
+
+If you need to anchor data for past days (e.g., after an outage or a new sensor deployment), use the backfill script.
+
+### Step 1: Verification
+Check if the data is available in the SSCAP API by visiting `${SSCAP_API_URL}/api/download` in your browser or using `curl`.
+
+### Step 2: Run the Backfill
+```bash
+node scripts/backfill_anchors.js
+```
+
+### Characteristics of the Backfill:
+- **Idempotent**: It queries EAS first and will **skip** any date/sensor combination that already has an attestation.
+- **Safety Delay**: It waits 3 seconds between sensor anchors to prevent transaction nonce collisions on the Base L2 network.
+- **UTC Alignment**: It skips the "current" UTC day to ensure only finalized daily data is anchored.
+
+---
+
+## 4. Operational Policies
 
 ### Timezone (UTC)
 To prevent data calculation drifts and overlap issues, all scripts explicitly execute in **UTC**.
@@ -57,3 +76,5 @@ This allows for future "burn" or "sell" operations on individual sensor data wit
 | **502 Error** | Irys Node Outage | Wait a few minutes or switch nodes (e.g., node1 to node2) in `arweave-uploader.js`. |
 | **Nonce Collision** | Transactions sent too fast | The scripts include a 2-3 second delay. Increase the delay in the loop if this persists. |
 | **Insufficient Gas** | Base Wallet empty | Send Base ETH to the attester address. |
+| **403/Secret Error** | API Secret Mismatch | Check `SSCAP_API_SECRET` in your `.env`. |
+| **Network Timeout** | RPC Node issue | Check `BASE_RPC_URL` or try a different provider (e.g. Alchemy/Infura). |
